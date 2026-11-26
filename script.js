@@ -111,12 +111,12 @@
           const wave = Math.sin(col * .2 + frame * .009 + row * .12) * (3 + depth * 13)
             + Math.cos(col * .065 - frame * .006) * 5;
           // Mouse movement changes the virtual camera angle, not just the dot positions.
-          const cameraX = pointerX * (10 + perspective * 48);
-          const cameraY = pointerY * (4 + perspective * 24);
-          const perspectivePull = pointerX * perspective * (baseX * -.055);
+          const cameraX = pointerX * (24 + perspective * 105);
+          const cameraY = pointerY * (12 + perspective * 55);
+          const perspectivePull = pointerX * perspective * (baseX * -.12);
           const x = width / 2 + baseX + cameraX + perspectivePull;
           const y = horizon + perspective * height * .68 + wave + cameraY
-            + pointerY * (baseX / width) * perspective * 12;
+            + pointerY * (baseX / width) * perspective * 28;
           const radius = .45 + perspective * 1.45;
           const alpha = .1 + perspective * .34;
           ctx.beginPath();
@@ -128,8 +128,8 @@
       }
       ctx.globalAlpha = 1;
       // The title and framing shift at a different depth from the particle plane.
-      openingHero.style.setProperty("--hero-shift-x", (pointerX * -7).toFixed(2) + "px");
-      openingHero.style.setProperty("--hero-shift-y", (pointerY * -5).toFixed(2) + "px");
+      openingHero.style.setProperty("--hero-shift-x", (pointerX * -15).toFixed(2) + "px");
+      openingHero.style.setProperty("--hero-shift-y", (pointerY * -11).toFixed(2) + "px");
       frame++;
       if (!document.hidden) raf = requestAnimationFrame(drawHero);
     };
