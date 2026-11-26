@@ -7,6 +7,7 @@
   const backToTop = document.querySelector(".back-to-top");
   const year = document.querySelector("#current-year");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const heroCanvas = document.querySelector(".hero-field");
 
   // Theme preference: saved choice takes priority over the system setting.
   let savedTheme = null;
@@ -59,6 +60,54 @@
   window.addEventListener("resize", () => {
     if (window.innerWidth > 760) closeMenu();
   });
+
+  // Subtle animated particle wave in the opening hero.
+  if (heroCanvas && !reduceMotion) {
+    const ctx = heroCanvas.getContext("2d");
+    let width = 0, height = 0, frame = 0, raf = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+    const resizeHero = () => {
+      const rect = heroCanvas.getBoundingClientRect();
+      width = rect.width; height = rect.height;
+      heroCanvas.width = Math.round(width * dpr);
+      heroCanvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    const drawHero = () => {
+      ctx.clearRect(0, 0, width, height);
+      const accent = getComputedStyle(root).getPropertyValue("--accent").trim() || "#a34f36";
+      const muted = getComputedStyle(root).getPropertyValue("--muted").trim() || "#777a73";
+      const cols = Math.max(26, Math.floor(width / 22));
+      const rows = Math.max(10, Math.floor(height / 27));
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = (col / (cols - 1)) * width;
+          const depth = row / (rows - 1);
+          const perspective = Math.pow(depth, 1.55);
+          const wave = Math.sin(col * .22 + frame * .012 + row * .09) * (8 + depth * 18)
+            + Math.cos(col * .075 - frame * .009) * 7;
+          const y = height * (.26 + perspective * .66) + wave;
+          const radius = .55 + perspective * 1.25;
+          const alpha = .12 + perspective * .32;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = row % 7 === 0 ? accent : muted;
+          ctx.globalAlpha = alpha;
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      frame++;
+      raf = requestAnimationFrame(drawHero);
+    };
+    resizeHero();
+    drawHero();
+    window.addEventListener("resize", resizeHero, { passive: true });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) cancelAnimationFrame(raf);
+      else if (!raf) drawHero();
+    });
+  }
 
   // Footer year.
   if (year) year.textContent = String(new Date().getFullYear());
