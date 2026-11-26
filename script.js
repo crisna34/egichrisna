@@ -7,6 +7,7 @@
   const backToTop = document.querySelector(".back-to-top");
   const year = document.querySelector("#current-year");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const heroCanvas = document.querySelector(".hero-field");
 
   // Theme preference: saved choice takes priority over the system setting.
   let savedTheme = null;
@@ -59,6 +60,112 @@
   window.addEventListener("resize", () => {
     if (window.innerWidth > 760) closeMenu();
   });
+
+  // Interactive perspective particle field + cursor parallax.
+  const openingHero = document.querySelector(".opening-hero");
+  if (heroCanvas && openingHero) {
+    const ctx = heroCanvas.getContext("2d");
+    let width = 0, height = 0, frame = 0, raf = 0;
+    let targetX = 0, targetY = 0, pointerX = 0, pointerY = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const pointerEnabled = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const resizeHero = () => {
+      const rect = heroCanvas.getBoundingClientRect();
+      width = rect.width; height = rect.height;
+      heroCanvas.width = Math.round(width * dpr);
+      heroCanvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    const onPointerMove = event => {
+      const rect = openingHero.getBoundingClientRect();
+      targetX = ((event.clientX - rect.left) / rect.width - .5) * 2;
+      targetY = ((event.clientY - rect.top) / rect.height - .5) * 2;
+      openingHero.style.setProperty("--pointer-x", event.clientX - rect.left + "px");
+      openingHero.style.setProperty("--pointer-y", event.clientY - rect.top + "px");
+      openingHero.classList.add("is-pointer-active");
+    };
+    const onPointerLeave = () => {
+      targetX = 0; targetY = 0;
+      openingHero.style.setProperty("--pointer-x", "50%");
+      openingHero.style.setProperty("--pointer-y", "50%");
+      openingHero.classList.remove("is-pointer-active");
+    };
+    if (pointerEnabled) {
+      openingHero.addEventListener("pointermove", onPointerMove, { passive: true });
+      openingHero.addEventListener("pointerleave", onPointerLeave);
+    }
+    const drawHero = () => {
+      ctx.clearRect(0, 0, width, height);
+      pointerX += (targetX - pointerX) * .055;
+      pointerY += (targetY - pointerY) * .055;
+      const accent = getComputedStyle(root).getPropertyValue("--accent").trim() || "#a34f36";
+      const muted = getComputedStyle(root).getPropertyValue("--muted").trim() || "#777a73";
+      const cols = Math.max(30, Math.floor(width / 19));
+      const rows = Math.max(14, Math.floor(height / 22));
+      const horizon = height * .27;
+      for (let row = 0; row < rows; row++) {
+        const depth = row / (rows - 1);
+        const perspective = Math.pow(depth, 1.7);
+        for (let col = 0; col < cols; col++) {
+          const baseX = (col / (cols - 1) - .5) * width;
+          const wave = Math.sin(col * .2 + frame * .009 + row * .12) * (3 + depth * 13)
+            + Math.cos(col * .065 - frame * .006) * 5;
+          // Mouse movement changes the virtual camera angle, not just the dot positions.
+          const cameraX = pointerX * (24 + perspective * 105);
+          const cameraY = pointerY * (12 + perspective * 55);
+          const perspectivePull = pointerX * perspective * (baseX * -.12);
+          const x = width / 2 + baseX + cameraX + perspectivePull;
+          const y = horizon + perspective * height * .68 + wave + cameraY
+            + pointerY * (baseX / width) * perspective * 28;
+          const radius = .45 + perspective * 1.45;
+          const alpha = .1 + perspective * .34;
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = (row + col) % 13 === 0 ? accent : muted;
+          ctx.globalAlpha = alpha;
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      // The title and framing shift at a different depth from the particle plane.
+      openingHero.style.setProperty("--hero-shift-x", (pointerX * -15).toFixed(2) + "px");
+      openingHero.style.setProperty("--hero-shift-y", (pointerY * -11).toFixed(2) + "px");
+      frame++;
+      if (!document.hidden) raf = requestAnimationFrame(drawHero);
+    };
+    resizeHero();
+    if (reduceMotion) {
+      // A static field remains visible when the visitor requests reduced motion.
+      drawHero();
+      cancelAnimationFrame(raf);
+    } else {
+      drawHero();
+    }
+    window.addEventListener("resize", resizeHero, { passive: true });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+      else if (!reduceMotion && !raf) drawHero();
+    });
+  }
+
+  // Reveal editorial sections gently as they enter the viewport.
+  const revealTargets = document.querySelectorAll(".about, .more, .contact, .profile-card, .intro-copy");
+  if ("IntersectionObserver" in window) {
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-revealed");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .12 });
+    revealTargets.forEach(target => {
+      target.classList.add("reveal-on-scroll");
+      revealObserver.observe(target);
+    });
+  } else {
+    revealTargets.forEach(target => target.classList.add("is-revealed"));
+  }
 
   // Footer year.
   if (year) year.textContent = String(new Date().getFullYear());
