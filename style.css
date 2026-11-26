@@ -110,3 +110,79 @@ h2 { margin-bottom: 26px; font: 500 clamp(2.2rem, 4vw, 3.3rem)/1.12 var(--serif)
   .site-footer > span { order: 3; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+
+/* Functional refinements — preserve the approved editorial layout */
+.menu-toggle {
+  display: none;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.menu-toggle span {
+  display: block;
+  width: 13px;
+  height: 1.5px;
+  background: var(--ink);
+  transition: transform .2s ease;
+}
+.menu-toggle[aria-expanded="true"] span:first-child { transform: translateY(3.25px) rotate(45deg); }
+.menu-toggle[aria-expanded="true"] span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+.header-inner nav a[aria-current="location"] { color: var(--accent); }
+.back-to-top {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  text-decoration: none;
+  box-shadow: 0 5px 20px rgba(0,0,0,.08);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(7px);
+  transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+}
+.back-to-top.is-visible { opacity: 1; visibility: visible; transform: translateY(0); }
+@media (max-width: 760px) {
+  .header-inner { position: relative; }
+  .menu-toggle { display: flex; margin-left: auto; flex: 0 0 34px; }
+  .header-inner nav {
+    position: absolute;
+    top: 67px;
+    left: -20px;
+    right: -20px;
+    z-index: 30;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 8px 20px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    box-shadow: 0 12px 22px rgba(0,0,0,.06);
+  }
+  .header-inner nav.is-open { display: flex; }
+  .header-inner nav a { padding: 11px 2px; border-bottom: 1px solid var(--line); }
+  .header-inner nav a:last-child { border-bottom: 0; }
+  .theme-toggle { margin-left: 0; }
+  body.menu-open { overflow: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-toggle span, .back-to-top { transition: none; }
+}
